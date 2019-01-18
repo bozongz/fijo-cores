@@ -1,13 +1,13 @@
 <component name="libraryTable">
   <library name="Maven: xom:xom:1.2.5">
     <CLASSES>
-      <root url="jar://E:/apache-maven-3.5.0/conf/repository/xom/xom/1.2.5/xom-1.2.5.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../conf/repository/xom/xom/1.2.5/xom-1.2.5.jar!/" />
     </CLASSES>
     <JAVADOC>
-      <root url="jar://E:/apache-maven-3.5.0/conf/repository/xom/xom/1.2.5/xom-1.2.5-javadoc.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../conf/repository/xom/xom/1.2.5/xom-1.2.5-javadoc.jar!/" />
     </JAVADOC>
     <SOURCES>
-      <root url="jar://E:/apache-maven-3.5.0/conf/repository/xom/xom/1.2.5/xom-1.2.5-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../conf/repository/xom/xom/1.2.5/xom-1.2.5-sources.jar!/" />
     </SOURCES>
   </library>
 </component>
