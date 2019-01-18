@@ -1,0 +1,101 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN'
+  'http://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+  
+<mapper namespace='com.fijo.cores.app.mapper.ProcessAgentMapper'>
+	<!-- 定义缓存 -->
+	<cache eviction="LRU" flushInterval="60000" size="512" readOnly="true"/>
+     
+  	<resultMap id="processAgentResult" type="ProcessAgent">
+        <id column="agentId" property="agentId" />
+        <result column="typeId" property="typeId" />  
+    	<result column="headerId" property="headerId" />    
+    	<result column="userId" property="userId" />	
+    	<result column="agentUserId" property="agentUserId" />
+    	<result column="agentUserCode" property="agentUserCode" />    
+    	<result column="agentUserName" property="agentUserName" /> 	
+ 		<result column="beginDate" property="beginDate" />
+ 		<result column="expires" property="expires" /> 	 		
+    	<result column="valid" property="valid" />
+    </resultMap>
+    
+    <select id='getById' parameterType='Integer' resultMap="processAgentResult">
+     	select * from app_process_agent where agentId = #{agentId}
+	</select>
+	
+    <select id="getAll" resultMap="processAgentResult">
+         SELECT a.*,h.headerDesc FROM app_process_agent a, app_process_header h WHERE a.headerId=h.headerId   
+    	<if test="typeId != null">
+            AND a.typeId = #{typeId}
+        </if>  
+        <if test="headerId != null">
+            AND a.headerId = #{headerId}
+        </if>  
+		<if test="userId != null">
+            AND a.userId = #{userId}
+        </if>    
+        <if test="valid != null">
+            AND a.valid = #{valid}
+        </if>  
+    </select>
+    
+    <select id="getExpiresAgent" resultMap="processAgentResult">
+         SELECT a.* FROM app_process_agent a WHERE a.valid=1 AND expires IS NOT NULL
+    </select>
+     
+    <insert id="create" parameterType="ProcessAgent" useGeneratedKeys="true" keyProperty="agentId" databaseId="mysql">
+        insert into app_process_agent (typeId,headerId,userId,agentUserId,agentUserCode,agentUserName,beginDate,expires) 
+        values (#{typeId},#{headerId},#{userId},#{agentUserId},#{agentUserCode},#{agentUserName},#{beginDate},#{expires})
+    </insert>
+    <insert id="create" parameterType="ProcessAgent" useGeneratedKeys="false" keyProperty="agentId" databaseId="oracle">
+        <selectKey resultType="Integer" keyProperty="agentId" order="BEFORE">
+            select app_process_agent_seq.nextval as agentId from dual
+        </selectKey>
+        insert into app_process_agent (agentId,typeId,headerId,userId,agentUserId,agentUserCode,agentUserName,beginDate,expires)
+        values (#{agentId},#{typeId},#{headerId},#{userId},#{agentUserId},#{agentUserCode},#{agentUserName},#{beginDate},#{expires})
+    </insert>
+
+	<insert id="batchCreate" parameterType="java.util.List" flushCache="true" statementType="PREPARED" timeout="20" databaseId="mysql">
+        insert into app_process_agent (typeId,headerId,userId,agentUserId,agentUserCode,agentUserName,beginDate,expires) 
+        values 
+        <foreach collection="list" index="index" item="item" separator=",">   
+	    (#{item.typeId},#{item.headerId},#{item.userId},#{item.agentUserId},#{item.agentUserCode},#{item.agentUserName},#{item.beginDate},#{item.expires})	 
+	    </foreach> 
+    </insert>
+    <insert id="batchCreate" parameterType="java.util.List" flushCache="true" statementType="PREPARED" timeout="20" databaseId="oracle">
+        insert into app_process_agent (agentId,typeId,headerId,userId,agentUserId,agentUserCode,agentUserName,beginDate,expires)
+        values
+        <foreach collection="list" index="index" item="item" separator=",">
+            (app_process_agent_seq.nextval,#{item.typeId},#{item.headerId},#{item.userId},#{item.agentUserId},#{item.agentUserCode},#{item.agentUserName},#{item.beginDate},#{item.expires})
+        </foreach>
+    </insert>
+
+    <delete id="delete" parameterType="ProcessAgent" flushCache="true" statementType="PREPARED" timeout="20">
+     	DELETE FROM app_process_agent 
+     	<where>
+     		<if test="agentId != null">
+	            AND agentId = #{agentId}
+	        </if> 
+     		<if test="headerId != null">
+	            AND headerId = #{headerId}
+	        </if>  
+			<if test="userId != null">
+	            AND userId = #{userId}
+	        </if>    
+	        <if test="agentUserId != null">
+	            AND agentUserId = #{agentUserId}
+	        </if>
+     	</where>
+    </delete>
+    
+	<update id="update" parameterType="ProcessAgent">  
+	    update app_process_agent
+		    <set>
+		        <!-- 定时器检查是否超过有效期 --> 
+		        <if test="valid != null">  
+		            valid = #{valid}  
+		        </if>   
+	   		</set>
+        where id = #{id}
+	</update> 
+</mapper>

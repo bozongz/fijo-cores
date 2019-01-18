@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN'
+  'http://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+  
+<mapper namespace='com.fijo.cores.app.mapper.ProcessStepConfigurationMapper'>
+	<!-- 定义缓存 -->
+	<cache eviction="LRU" flushInterval="60000" size="512" readOnly="true"/>
+     
+  	<resultMap id="ProcessStepConfigurationResult" type="ProcessStepConfiguration">
+        <id column="configurationId" property="configurationId" />
+        <result column="logic" property="logic" />
+        <result column="subjectType" property="subjectType" />        
+        <result column="subjects" property="subjects" /> 
+       <result column="cversion" property="cversion" />
+    	<association property="processStep" javaType="ProcessStep">
+			<id property="stepId" column="stepId"/>
+			<result property="stepCode" column="stepCode"/>
+		</association>
+    	<collection property="conditions" javaType="ArrayList" fetchType="eager" column="configurationId" ofType="ProcessStepCondition" select="com.fijo.cores.app.mapper.ProcessStepConditionMapper.getByConfiguration"/>
+    </resultMap>
+
+	<select id='getByStep' parameterType='Integer' resultMap="ProcessStepConfigurationResult">		 
+		 SELECT c.*,s.stepId,s.stepCode FROM app_process_step_configuration c,app_process_step s,app_process_header h WHERE c.processStepId=s.stepId AND s.headerId=h.headerId AND c.cversion=h.hversion AND c.processStepId = #{processStepId}
+	</select>
+
+	<insert id="create" parameterType="ProcessStepConfiguration" flushCache="true" statementType="PREPARED" timeout="20" useGeneratedKeys="true" keyProperty="configurationId" databaseId="mysql">
+        insert into app_process_step_configuration (logic,subjectType,subjects,cversion,processStepId)  values 
+        (#{logic},#{subjectType},#{subjects},#{cversion},#{processStep.stepId})
+    </insert>
+    <insert id="create" parameterType="ProcessStepConfiguration" flushCache="true" statementType="PREPARED" timeout="20" useGeneratedKeys="false" keyProperty="configurationId" databaseId="oracle">
+        <selectKey resultType="Integer" keyProperty="configurationId" order="BEFORE">
+            select app_configuration_seq.nextval as configurationId from dual
+        </selectKey>
+        insert into app_process_step_configuration (configurationId,logic,subjectType,subjects,cversion,processStepId)  values
+        (#{configurationId},#{logic},#{subjectType},#{subjects},#{cversion},#{processStep.stepId})
+    </insert>
+</mapper>

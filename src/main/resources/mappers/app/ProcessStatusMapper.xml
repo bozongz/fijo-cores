@@ -1,0 +1,144 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN'
+  'http://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+  
+<mapper namespace='com.fijo.cores.app.mapper.ProcessStatusMapper'>
+	<!-- 定义缓存 -->
+	<cache eviction="LRU" flushInterval="60000" size="512" readOnly="true"/>
+     
+ 	<resultMap id="ProcessStatusResult" type="ProcessStatus">   
+        <id column="id" property="id" />        
+        <result column="receiptId" property="receiptId" /> 
+        <result column="title" property="title" />		
+        <result column="code" property="code" />
+        <result column="processTypeId" property="processTypeId" />
+        <result column="processHeaderId" property="processHeaderId" />
+        <result column="processStepId" property="processStepId" />
+        <result column="processStepCode" property="processStepCode" />
+        <result column="processStepType" property="processStepType" />
+ 		<result column="processStepVersion" property="processStepVersion" /> 
+        <result column="orgId" property="orgId" />
+        <result column="orgName" property="orgName" />
+        <result column="enabled" property="enabled" />  
+        <result column="removed" property="removed" />
+    	<result column="createUserId" property="createUserId" />
+    	<result column="createUserCode" property="createUserCode" />
+ 		<result column="createUserName" property="createUserName" />
+ 		<result column="createDate" property="createDate" />
+ 		<result column="updateUserId" property="updateUserId" />
+ 		<result column="updateUserCode" property="updateUserCode" />
+ 		<result column="updateUserName" property="updateUserName" />
+ 		<result column="updateDate" property="updateDate" />   
+		<result column="subjects" property="subjects"/>
+ 		<result column="subjectType" property="subjectType"/> 		       
+    </resultMap>
+    
+	<select id='getById' parameterType='Long' resultMap="ProcessStatusResult">
+     	SELECT i.*,h.headerDesc,s.stepDesc FROM app_process_status i,app_process_header h,app_process_step s WHERE i.processHeaderId=h.headerId AND i.processStepId=s.stepId AND i.id = #{id}
+	</select>
+
+    <select id="getCount" resultType="Integer">
+        SELECT count(*) FROM app_process_status s WHERE s.createUserId = #{createUserId}
+    </select>
+
+    <select id="getAll" resultMap="ProcessStatusResult">
+        SELECT i.*,h.headerDesc,s.stepDesc FROM app_process_status i,app_process_header h,app_process_step s WHERE i.processHeaderId=h.headerId AND i.processStepId=s.stepId
+        <if test="code != null">
+            AND i.code = #{code}
+        </if>
+		<if test="title != null">
+            AND i.title = #{title}
+        </if> 
+        <if test="enabled != null">
+            and i.enabled = #{enabled}
+        </if>
+        <if test="processTypeId != null">
+            AND i.processTypeId = #{processTypeId}
+        </if> 
+        <if test="processHeaderId != null">
+            AND i.processHeaderId = #{processHeaderId}
+        </if> 
+        <if test="processStepId != null">
+            AND i.processStepId = #{processStepId}
+        </if> 
+        <if test="subjects != null">
+            AND i.subjects = #{subjects}
+        </if> 
+        <if test="subjectType != null">
+            AND i.subjectType = #{subjectType}
+        </if> 
+        <if test="receiptId != null">
+            AND i.receiptId = #{receiptId}
+        </if> 
+        <if test="orgId != null">
+            AND i.orgId = #{orgId}
+        </if> 
+    	<if test="createUserId != null">
+        	AND i.createUserId = #{createUserId}
+        </if>  
+    	<if test="updateUserCode != null">
+        	AND i.updateUserId = #{updateUserId}
+        </if> 
+        <if test="orderByClause != null" >
+	      ORDER BY ${orderByClause}
+	    </if>  
+    </select>
+
+    <select id="getJoinCount" resultType="Integer">
+        SELECT count(*) FROM app_process_status i,app_process_header h,app_process_step s,
+		(SELECT l.headerId,l.receiptId FROM app_process_audit_log l WHERE l.createUserId=#{createUserId} AND l.result!='created' AND l.result!='updated' GROUP BY l.headerId,l.receiptId) ls
+		 WHERE i.processHeaderId=h.headerId AND i.processStepId=s.stepId AND i.processHeaderId=ls.headerId AND i.receiptId=ls.receiptId ORDER BY i.updateDate DESC
+    </select>
+
+    <select id="getJoin" parameterType="Integer" resultMap="ProcessStatusResult">
+		SELECT i.*,h.headerDesc,s.stepDesc FROM app_process_status i,app_process_header h,app_process_step s,
+		(SELECT l.headerId,l.receiptId FROM app_process_audit_log l WHERE l.createUserId=#{createUserId} AND l.result!='created' AND l.result!='updated' GROUP BY l.headerId,l.receiptId) ls
+		 WHERE i.processHeaderId=h.headerId AND i.processStepId=s.stepId AND i.processHeaderId=ls.headerId AND i.receiptId=ls.receiptId ORDER BY i.updateDate DESC            
+	</select>
+	
+	<insert id="create" parameterType="ProcessStatus" useGeneratedKeys="true" keyProperty="id" databaseId="mysql">
+        INSERT INTO app_process_status (receiptId,title,code,processTypeId,processHeaderId,processStepId,processStepCode,processStepType,processStepVersion,subjects,subjectType,orgId,orgName,createUserId,createUserCode,createUserName,createDate,updateDate)
+        VALUES (#{receiptId},#{title},#{code},#{processTypeId},#{processHeaderId},#{processStepId},#{processStepCode},#{processStepType},#{processStepVersion},#{subjects},#{subjectType},#{orgId},#{orgName},#{createUserId},#{createUserCode},#{createUserName},#{createDate},#{updateDate})
+    	ON DUPLICATE KEY UPDATE title=#{title},updateUserId=#{updateUserId},updateUserCode=#{updateUserCode},updateUserName=#{updateUserName},updateDate=#{updateDate},processStepId=#{processStepId},processStepCode=#{processStepCode},processStepType=#{processStepType},processStepVersion=#{processStepVersion},subjects=#{subjects},subjectType=#{subjectType}
+    </insert>
+    <insert id="create" parameterType="ProcessStatus" useGeneratedKeys="false" keyProperty="id" databaseId="oracle">
+        <selectKey resultType="Long" keyProperty="id" order="BEFORE">
+            select app_process_status_seq.nextval as id from dual
+        </selectKey>
+        MERGE INTO app_process_status dest
+        USING (SELECT #{processTypeId} processTypeId, #{processHeaderId} processHeaderId, #{receiptId} receiptId FROM dual) src
+        ON (
+        (dest.processTypeId = src.processTypeId AND dest.processHeaderId = src.processHeaderId AND dest.receiptId = src.receiptId)
+        )
+        WHEN MATCHED THEN
+        UPDATE SET title=#{title},updateUserId=#{updateUserId},updateUserCode=#{updateUserCode},updateUserName=#{updateUserName},updateDate=#{updateDate},processStepId=#{processStepId},processStepCode=#{processStepCode},processStepType=#{processStepType},processStepVersion=#{processStepVersion},subjects=#{subjects},subjectType=#{subjectType}
+        WHEN NOT MATCHED THEN
+        INSERT (id,receiptId,title,code,processTypeId,processHeaderId,processStepId,processStepCode,processStepType,processStepVersion,subjects,subjectType,orgId,orgName,createUserId,createUserCode,createUserName,createDate)
+        VALUES (#{id},#{receiptId},#{title},#{code},#{processTypeId},#{processHeaderId},#{processStepId},#{processStepCode},#{processStepType},#{processStepVersion},#{subjects},#{subjectType},#{orgId},#{orgName},#{createUserId},#{createUserCode},#{createUserName},#{createDate})
+    </insert>
+
+    <delete id="delete" parameterType="ProcessStatus" flushCache="true" statementType="PREPARED" timeout="20">
+     	DELETE FROM app_process_status WHERE processTypeId = #{processTypeId} AND processHeaderId=#{processHeaderId} AND receiptId=#{receiptId}
+    </delete>
+    
+    <select id='getOne' resultMap="ProcessStatusResult">
+     	SELECT i.*,h.headerDesc,s.stepDesc FROM app_process_status i,app_process_header h,app_process_step s
+ WHERE i.processHeaderId=h.headerId AND i.processStepId=s.stepId AND i.processHeaderId = #{processHeaderId} AND i.receiptId = #{receiptId}
+	</select>
+	
+    <update id="update" parameterType="java.util.Map" flushCache="true" statementType="PREPARED" timeout="20">
+     	UPDATE app_process_status SET receiptId=#{previousReceiptId} WHERE processTypeId = #{processTypeId} AND processHeaderId=#{processHeaderId} AND receiptId=#{currentReceiptId}
+    </update>
+    
+    <select id='checkProcessRunning' parameterType="ProcessStatus" resultType="Integer">
+     	SELECT COUNT(*) FROM app_process_status i WHERE i.processTypeId = #{processTypeId} AND i.processHeaderId = #{processHeaderId} AND i.processStepVersion = #{processStepVersion} AND (processStepType='first' OR processStepType='autoChange' OR processStepType='continually' OR processStepType='special')
+	</select>
+
+    <update id="updateOnCompleted" parameterType="java.util.Map" flushCache="true" statementType="PREPARED" timeout="20">
+        UPDATE app_process_status SET createUserId=#{createUserId},createUserCode=#{createUserCode},createUserName=#{createUserName},createDate=#{createDate}
+          ,updateUserId=#{updateUserId},updateUserCode=#{updateUserCode},updateUserName=#{updateUserName},updateDate=#{updateDate}
+          ,subjects=#{subjects},subjectType=#{subjectType}
+        WHERE id=#{id}
+    </update>
+</mapper>    
+     

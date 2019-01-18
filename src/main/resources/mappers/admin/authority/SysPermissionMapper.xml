@@ -1,0 +1,162 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN'
+  'http://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+
+<mapper namespace='com.fijo.cores.admin.authority.mapper.SysPermissionMapper'>
+	<!-- 定义缓存
+	<cache eviction="LRU" flushInterval="60000" size="512" readOnly="true"/>
+    -->
+    <!-- LazyLoading 方式启用延迟加载，适用于单个详细实体对象  Start 
+	<resultMap id="sysPermissionResult" type="SysPermission">
+        <id column="id" property="id" />
+		<result column="name" property="name" />
+		<result column="description" property="description" />
+		<result column="type" property="type" />
+		<result column="url" property="url" />		
+		<result column="createDate" property="createDate" />
+		<result column="updateDate" property="updateDate" />				
+        <association property='parent' resultMap='com.fijo.cores.admin.authority.mapper.SysPermissionMapper.sysPermissionResult'/>
+    </resultMap>
+      
+	<resultMap id="sysLazyPermissionResult" type="SysPermission">
+		<association property="parent" column="parent_id" javaType="SysPermission" fetchType="lazy" select="com.fijo.cores.admin.authority.mapper.SysPermissionMapper.getById"/>
+	</resultMap>-->		
+	<!-- LazyLoading 方式启用延迟加载，适用于单个详细实体对象  End -->
+	
+	<!-- 关联查询方式，适用于集合列表实体对象  Start -->
+	<resultMap id="simplePermissionResult" type="SysPermission">
+        <id column="id" property="id" />
+		<result column="name" property="name" />
+		<result column="description" property="description" />		
+		<result column="type" property="type" />
+		<result column="url" property="url" />	
+		<result column="icon" property="icon" />	  
+		<result column="createDate" property="createDate" />
+        <result column="updateDate" property="updateDate" />
+        <result column="parentId" property="parentId" />
+        <result column="parentName" property="parentName" />
+        <result column="parentUrl" property="parentUrl" />
+        <result column="parentDescription" property="parentDescription" />
+		<association property="parent" javaType="SysPermission">
+			<id property="id" column="parentId"/>
+			<result column="parentName" property="name" />
+			<result column="parentUrl" property="url" />	
+			<result column="parentDescription" property="description" />
+		</association> 
+    </resultMap>
+	
+	<select id='getRoot' resultType="SysPermission">
+	     SELECT * FROM sys_permission WHERE parent_id is null
+	</select>	   
+    
+	<select id='getById' parameterType='Integer' resultMap="simplePermissionResult">
+		SELECT c.*,p.id AS parentId,p.name AS parentName,p.url AS parentUrl,p.description AS parentDescription FROM sys_permission c LEFT JOIN sys_permission p ON c.parent_id=p.id WHERE c.id = #{id}
+	</select>
+
+	<select id='getByUnique' parameterType='String' resultMap="simplePermissionResult">
+		SELECT * FROM sys_permission WHERE name = #{name}
+	</select>
+	
+  	<select id='getExcludeRoot' resultMap="simplePermissionResult">
+	     SELECT c.*,p.id AS parentId,p.name AS parentName,p.url AS parentUrl,p.description AS parentDescription FROM sys_permission c LEFT JOIN sys_permission p ON c.parent_id=p.id WHERE c.parent_id IS NOT NULL ORDER BY c.id asc	
+    </select>   
+    
+    <!-- 基于用户-资源直接授权时使用  Start-->  
+    <select id='getSysUserPermission' parameterType='Integer' resultMap="simplePermissionResult">
+	     SELECT p.* FROM sys_permission p, sys_user_permission up WHERE p.id=up.permission_id and up.user_id = #{userId}
+	</select>	 
+	<delete id="deleteSysUserPermissionByUserId" parameterType='Integer' flushCache="true" statementType="PREPARED" timeout="20">
+        delete from sys_user_permission where user_id=#{userId}
+    </delete>   	
+	<insert id="createSysUserPermission" useGeneratedKeys="true" keyProperty="id" databaseId="mysql">
+    	insert IGNORE into sys_user_permission(user_id,permission_id) values (#{userId},#{permissionId})
+	</insert>
+    <insert id="createSysUserPermission" useGeneratedKeys="false" keyProperty="id" databaseId="oracle">
+        MERGE INTO sys_user_permission dest
+          USING (SELECT #{userId} AS user_id, #{permissionId} AS permission_id FROM dual) src
+          ON (
+              (dest.user_id = src.user_id AND dest.permission_id = src.permission_id)
+          )
+          WHEN NOT MATCHED THEN
+            INSERT (user_id,permission_id)
+            VALUES (#{userId},#{permissionId})
+    </insert>
+	<!-- 基于用户-资源直接授权时使用  End-->  
+			
+    <select id='getByRole' parameterType='Integer' resultMap="simplePermissionResult">
+	     SELECT p.* FROM sys_permission p,sys_role_permission rp WHERE p.id = rp.permission_id and rp.role_id= #{id}				
+    </select>	
+   
+     <select id='getByParent' parameterType='Integer' resultMap="simplePermissionResult">
+	     SELECT * FROM sys_permission p WHERE p.parent_id = #{parent.id} ORDER BY p.id asc
+    </select>	
+
+	<select id="getMenu" parameterType='Integer' resultMap="simplePermissionResult">
+        SELECT p.*,p.parent_id AS parentId FROM sys_user u,sys_role r,sys_user_role ur,sys_permission p,sys_role_permission rp WHERE ur.user_id=u.id AND ur.role_id=r.id AND rp.role_id=r.id AND rp.permission_id=p.id AND u.id=#{userId} AND p.type!='button' order by p.id asc
+    </select>
+    
+	<select id="getAll" resultMap="simplePermissionResult">
+        SELECT c.*,p.id AS parentId,p.name AS parentName,p.url AS parentUrl,p.description AS parentDescription FROM sys_permission c LEFT JOIN sys_permission p ON c.parent_id=p.id WHERE 1=1
+		<if test="name != null and name !=''">
+            and c.name = #{name}
+        </if>
+        <if test="type != null and type !=''">
+            and c.type = #{type}
+        </if>
+        <if test="description != null and description !=''">
+            and c.description = #{description}
+        </if>
+        <if test="parent != null">
+            and c.parent_id = #{parent.id}
+        </if>
+        order by c.id asc
+    </select>
+    <!-- 关联查询方式，适用于集合列表实体对象  End -->
+    
+	<insert id="create" parameterType="SysPermission" useGeneratedKeys="true" keyProperty="id" databaseId="mysql">
+    	insert into sys_permission(createDate,updateDate,description,name,url,type,parent_id) values (#{createDate},#{updateDate},#{description},#{name},#{url},#{type},#{parent.id})
+	</insert>
+    <insert id="create" parameterType="SysPermission" useGeneratedKeys="false" keyProperty="id" databaseId="oracle">
+        <selectKey resultType="Integer" keyProperty="id" order="BEFORE">
+            select sys_permission_seq.nextval as id from dual
+        </selectKey>
+        insert into sys_permission(id,createDate,updateDate,description,name,url,type,parent_id) values (#{id},#{createDate},#{updateDate},#{description},#{name},#{url},#{type},#{parent.id})
+    </insert>
+
+	<insert id="batchCreate" parameterType="java.util.List" flushCache="true" statementType="PREPARED" timeout="20" databaseId="mysql">
+        insert into sys_permission(createDate,description,name,url,type,parent_id) values
+        <foreach collection="list" index="index" item="item" separator=",">   
+	        (#{item.createDate},#{item.description},#{item.name},#{item.url},#{item.type},#{item.parent.id})    
+	    </foreach> 
+    </insert>
+    <insert id="batchCreate" parameterType="java.util.List" flushCache="true" statementType="PREPARED" timeout="20" databaseId="oracle">
+        insert into sys_permission(id,createDate,description,name,url,type,parent_id) values
+        <foreach collection="list" index="index" item="item" separator=",">
+            (sys_permission_seq.nextval,#{item.createDate},#{item.description},#{item.name},#{item.url},#{item.type},#{item.parent.id})
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="SysPermission" flushCache="true" statementType="PREPARED" timeout="20">
+        update sys_permission set updateDate=#{updateDate},icon=#{icon},description=#{description},name=#{name},url=#{url},type=#{type},parent_id=#{parent.id} where id=#{id}
+    </update>   
+    
+  	<delete id="delete" parameterType="SysPermission" flushCache="true" statementType="PREPARED" timeout="20">
+        DELETE FROM sys_permission WHERE id=#{id}
+    </delete>	
+       
+    <delete id="batchDelete" flushCache="true" statementType="PREPARED" timeout="20">
+     	DELETE FROM sys_permission WHERE id IN
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">   
+	        #{item}   
+	    </foreach> 
+    </delete> 
+        
+    <!-- 显示模块菜单首页面链接 Start -->
+	<select id='getByMoudle' resultMap="simplePermissionResult">
+	     select p.* from sys_permission p,sys_role_permission rp, sys_role r, sys_user u, sys_user_role ur where u.id=ur.user_id and ur.role_id=r.id and r.id=rp.role_id and rp.permission_id=p.id and p.type='module' and u.loginName=#{loginName} ORDER BY p.id ASC
+	</select>	 
+	<select id='getByParentMenu' resultMap="simplePermissionResult">
+	     select p.* from sys_permission p,sys_role_permission rp, sys_role r, sys_user u, sys_user_role ur where u.id=ur.user_id and ur.role_id=r.id and r.id=rp.role_id and rp.permission_id=p.id and p.parent_id=#{parentId} and u.loginName=#{loginName} ORDER BY p.id ASC
+	</select>	
+    <!-- 显示模块菜单首页面链接 End -->
+</mapper>

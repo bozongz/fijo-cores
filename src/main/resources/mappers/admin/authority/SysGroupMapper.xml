@@ -1,0 +1,84 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN'
+        'http://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+
+<mapper namespace='com.fijo.cores.admin.authority.mapper.SysGroupMapper'>
+    <!-- 定义缓存
+    <cache eviction="LRU" flushInterval="60000" size="512" readOnly="true"/>
+    -->
+    <!-- LazyLoading 方式启用延迟加载，适用于单个详细实体对象  Start -->
+    <resultMap id="simpleGroupResult" type="SysGroup">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="type" property="type" />
+        <result column="description" property="description" />
+    </resultMap>
+    <select id='getById' parameterType='Integer' resultMap="simpleGroupResult">
+        SELECT * FROM sys_group WHERE id = #{id}
+    </select>
+    <select id='getByUnique' parameterType='String' resultMap="simpleGroupResult">
+        SELECT * FROM sys_group WHERE name = #{name}
+    </select>
+    <select id='getByUser' parameterType='Integer' resultMap="simpleGroupResult">
+        SELECT g.* FROM sys_group g, sys_user_group ug WHERE g.id=ug.group_id and ug.user_id = #{userId}
+    </select>
+    <select id='getGroupUser' parameterType='Integer' resultType="String">
+        SELECT u.usercode FROM sys_user u, sys_user_group ug WHERE u.id=ug.user_id and ug.group_id = #{groupid}
+    </select>
+
+    <select id="getAll" resultMap="simpleGroupResult">
+        select * from sys_group
+        <where>
+            <if test="name != null and name !=''">
+                and name = #{name}
+            </if>
+			<if test="type!= null and type !=''">
+                and type = #{type}
+            </if>
+        </where>
+    </select>
+    <!-- 关联查询方式，适用于集合列表实体对象  End -->
+
+    <insert id="create" parameterType="SysGroup" useGeneratedKeys="true" keyProperty="id" databaseId="mysql">
+        insert into sys_group(description,name,type) values (#{description},#{name},#{type})
+    </insert>
+    <insert id="create" parameterType="SysGroup" useGeneratedKeys="false" keyProperty="id" databaseId="oracle">
+        <selectKey resultType="Integer" keyProperty="id" order="BEFORE">
+            select sys_group_seq.nextval as id from dual
+        </selectKey>
+        insert into sys_group(id,description,name,type) values (#{id},#{description},#{name},#{type})
+    </insert>
+
+    <update id="update" parameterType="SysGroup" flushCache="true" statementType="PREPARED" timeout="20">
+        update sys_group set name=#{name},type=#{type} where id=#{id}
+    </update>
+
+    <insert id="createSysUserGroup"  flushCache="true" statementType="PREPARED" timeout="20">
+        insert into sys_user_group (user_id,group_id) values (#{userId},#{groupId})
+    </insert>
+
+    <delete id="deleteSysUserGroupByGroupId" flushCache="true" statementType="PREPARED" timeout="20">
+        delete from sys_user_group where group_id=#{groupId}
+    </delete>
+
+    <delete id="deleteSysUserGroupByUserId" flushCache="true" statementType="PREPARED" timeout="20">
+        delete from sys_user_group where user_id=#{userId}
+    </delete>
+
+    <delete id="delete" parameterType="SysGroup" flushCache="true" statementType="PREPARED" timeout="20">
+        DELETE FROM sys_group WHERE id=#{id}
+    </delete>
+
+    <delete id="batchDelete" flushCache="true" statementType="PREPARED" timeout="20">
+        DELETE FROM sys_group WHERE id IN
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <!--根据组id和用户id删除关联信息-->
+    <delete id="deleteSysUserGroup"  flushCache="true" statementType="PREPARED" timeout="20">
+        DELETE FROM sys_user_group WHERE group_id=#{groupId} and user_id=#{userId}
+    </delete>
+
+</mapper>

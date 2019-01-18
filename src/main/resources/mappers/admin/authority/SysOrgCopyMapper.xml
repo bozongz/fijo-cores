@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN'
+  'http://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+  
+<mapper namespace='com.fijo.cores.admin.authority.mapper.SysOrgCopyMapper'>
+	<!-- 定义缓存 -->
+	<cache eviction="LRU" flushInterval="60000" size="512" readOnly="true"/>
+		 
+    <!-- 关联查询方式，适用于集合列表实体对象  Start -->
+	<resultMap id="simpleOrgResult" type="SysOrgCopy">
+        <id column="id" property="id" />
+        <result column="orgCode" property="orgCode" />
+        <result column="timOrgId" property="timOrgId" />
+        <result column="timOrgParentId" property="timOrgParentId" />
+        <result column="orgName" property="orgName" />
+        <result column="description" property="description" />
+        <result column="orderBy" property="orderBy" />
+        <result column="remark" property="remark" />
+        <result column="createDate" property="createDate" />
+        <result column="updateDate" property="updateDate" />
+    </resultMap>
+
+    <select id='getById' parameterType='Integer' resultMap="simpleOrgResult">
+        SELECT * FROM sys_org_copy WHERE id = #{id}
+    </select>
+
+	<select id='getAll' resultMap="simpleOrgResult">
+     	SELECT * FROM sys_org_copy
+        <if test="orderByClause != null" >
+	      order by ${orderByClause}
+	    </if>    
+	</select>
+  	
+	<insert id="batchCreate" parameterType="java.util.List" flushCache="true" statementType="PREPARED" timeout="20" databaseId="mysql">
+        insert into sys_org_copy (createDate,updateDate,timOrgId,timOrgParentId,orgCode,orgName,description,orderBy,remark) values
+        <foreach collection="list" index="index" item="item" separator=",">   
+	        (#{item.createDate},#{item.updateDate},#{item.timOrgId},#{item.timOrgParentId},#{item.orgCode},#{item.orgName},#{item.description},#{item.orderBy},#{item.remark})
+	    </foreach> 
+    </insert>
+
+    <insert id="batchCreate" parameterType="java.util.List" databaseId="oracle">
+        INSERT INTO sys_org_copy (id,createDate,updateDate,timOrgId,timOrgParentId,orgCode,orgName,description,orderBy,remark)
+        SELECT sys_org_copy_seq.NEXTVAL id, A.*
+        FROM(
+        <foreach collection="list" item="item" index="index" separator="UNION ALL">
+            SELECT
+            #{item.createDate, javaType=Date, jdbcType=DATE},
+            #{item.updateDate, javaType=Date, jdbcType=DATE},
+            #{item.timOrgId, javaType=String, jdbcType=VARCHAR},
+            #{item.timOrgParentId, javaType=String, jdbcType=VARCHAR},
+            #{item.orgCode, javaType=String, jdbcType=VARCHAR},
+            #{item.orgName, javaType=String, jdbcType=VARCHAR},
+            #{item.description, javaType=String, jdbcType=VARCHAR},
+            #{item.orderBy, javaType=Integer, jdbcType=NUMERIC},
+            #{item.remark, javaType=String, jdbcType=VARCHAR}
+            FROM dual
+        </foreach>
+        ) A
+    </insert>
+
+</mapper>

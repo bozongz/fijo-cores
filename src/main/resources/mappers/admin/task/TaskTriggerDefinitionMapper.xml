@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace='com.fijo.cores.admin.task.mapper.TaskTriggerDefinitionMapper'>
+	<!-- 定义缓存 -->
+	<cache eviction="LRU" flushInterval="60000" size="512" readOnly="true"/>
+     
+  	<resultMap id="TaskTriggerDefinitionResult" type="TaskTriggerDefinition">
+        <id column="id" property="id" />        
+        <result column="jobname" property="jobname" />
+        <result column="whenday" property="whenday" />
+        <result column="whenhour" property="whenhour" />
+        <result column="whenminute" property="whenminute" /> 
+       	<result column="whenmonth" property="whenmonth" />
+ 		<result column="maxFireTimes" property="maxFireTimes" />                               	
+    </resultMap>
+	
+	<select id="getAll" resultMap="TaskTriggerDefinitionResult">
+         SELECT * FROM sys_task_trigger_def
+    </select>
+    <!-- 
+	<select id='getByUnique' parameterType='String' resultMap="TaskTriggerDefinitionResult">
+     	SELECT * FROM sys_task_trigger_def WHERE jobname=#{jobname}
+	</select>  -->
+</mapper>

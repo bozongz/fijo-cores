@@ -1,0 +1,122 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN'
+  'http://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+
+<mapper namespace='com.fijo.cores.admin.authority.mapper.SysRoleMapper'>
+	<!-- 定义缓存
+	<cache eviction="LRU" flushInterval="60000" size="512" readOnly="true"/>
+	-->
+	<!-- LazyLoading 方式启用延迟加载，适用于单个详细实体对象  Start -->
+	<resultMap id="sysRoleLazyResult" type="SysRole">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="description" property="description" />
+        <result column="type" property="type" /> 
+        <result column="createDate" property="createDate" />
+        <result column="updateDate" property="updateDate" /> 
+        <collection property="permissionList" javaType="ArrayList" fetchType="eager" column="id" ofType="SysPermission" select="com.fijo.cores.admin.authority.mapper.SysPermissionMapper.getByRole"/>
+    </resultMap>    
+    <select id='getById' parameterType='Integer' resultMap="sysRoleLazyResult">
+	     SELECT * FROM sys_role WHERE id = #{id}
+	</select>
+	<select id='getByUnique' parameterType='String' resultMap="sysRoleLazyResult">
+		 SELECT * FROM sys_role WHERE name = #{name}
+	</select>
+	<!-- 登陆认证需要根据用户获取角色，再根据角色获取权限资源，因此使用延迟加载方式 -->
+	<select id='getByUser' parameterType='Integer' resultMap="sysRoleLazyResult">
+	     SELECT r.* FROM sys_role r, sys_user_role ur WHERE r.id=ur.role_id and ur.user_id = #{userId}
+	</select>
+    <!-- LazyLoading 方式启用延迟加载，适用于单个详细实体对象  End -->
+
+	<!-- 关联查询方式，适用于集合列表实体对象  Start -->
+	<resultMap id="simpleRoleResult" type="SysRole">
+        <id column="id" property="id" />
+		<result column="name" property="name" />
+        <result column="description" property="description" />
+        <result column="type" property="type" />
+        <result column="createDate" property="createDate" />
+        <result column="updateDate" property="updateDate" /> 
+        <!-- 
+		<collection property="permissionList" ofType="SysPermission">
+			<id column="id" property="id" />
+			<result column="name" property="name" />
+	        <result column="description" property="description" />
+	        <result column="type" property="type" /> 
+	        <result column="createDate" property="createDate" />
+	        <result column="updateDate" property="updateDate" />
+		</collection> -->
+    </resultMap>        	 
+	<select id="getAll" resultMap="simpleRoleResult" databaseId="mysql">
+        select * from sys_role r WHERE id!=1
+		<if test="name != null and name !=''">
+            and r.name like concat('%',#{name},'%')
+        </if>
+        <if test="type != null and type !=''">
+            and r.type like concat('%',#{type},'%')
+        </if>
+        <if test="description != null and description !=''">
+            and r.description like concat('%',#{description},'%')
+        </if>
+        order by description desc
+    </select>
+
+    <select id="getAll" resultMap="simpleRoleResult" databaseId="oracle">
+        select * from sys_role r WHERE id!=1
+        <if test="name != null and name !=''">
+            and r.name like concat(concat('%',#{name}),'%')
+        </if>
+        <if test="type != null and type !=''">
+            and r.type like concat(concat('%',#{type}),'%')
+        </if>
+        <if test="description != null and description !=''">
+            and r.description like concat(concat('%',#{description}),'%')
+        </if>
+        order by description desc
+    </select>
+    <!-- 关联查询方式，适用于集合列表实体对象  End -->
+	    
+    <insert id="create" parameterType="SysRole" useGeneratedKeys="true" keyProperty="id" databaseId="mysql">
+    	insert into sys_role(createDate,updateDate,description,name,type) values (#{createDate},#{updateDate},#{description},#{name},#{type})
+	</insert>
+    <insert id="create" parameterType="SysRole" useGeneratedKeys="false" keyProperty="id" databaseId="oracle">
+        <selectKey resultType="Integer" keyProperty="id" order="BEFORE">
+            select sys_role_seq.nextval as id from dual
+        </selectKey>
+        insert into sys_role(id,createDate,updateDate,description,name,type) values (#{id},#{createDate},#{updateDate},#{description},#{name},#{type})
+    </insert>
+
+	<update id="update" parameterType="SysRole" flushCache="true" statementType="PREPARED" timeout="20">
+        update sys_role set updateDate=#{updateDate},description=#{description},name=#{name},type=#{type} where id=#{id}
+    </update>
+    
+    <insert id="createSysRolePermission" parameterType='Integer' flushCache="true" statementType="PREPARED" timeout="20">
+		insert into sys_role_permission (role_id,permission_id) values (#{roleId},#{permissionId})
+	</insert>
+
+	<insert id="createSysUserRole" parameterType='Integer' flushCache="true" statementType="PREPARED" timeout="20">
+		insert into sys_user_role (user_id,role_id) values (#{userId},#{roleId})
+	</insert>
+    
+    <delete id="deleteSysRolePermissionByRoleId" parameterType='Integer' flushCache="true" statementType="PREPARED" timeout="20">
+        delete from sys_role_permission where role_id=#{roleId}
+    </delete>    
+    
+    <delete id="deleteSysUserRoleByRoleId" parameterType='Integer' flushCache="true" statementType="PREPARED" timeout="20">
+        delete from sys_user_role where role_id=#{roleId}
+    </delete> 
+	
+	<delete id="deleteSysUserRoleByUserId" parameterType='Integer' flushCache="true" statementType="PREPARED" timeout="20">
+        delete from sys_user_role where user_id=#{userId}
+    </delete> 
+            
+  	<delete id="delete" parameterType="SysRole" flushCache="true" statementType="PREPARED" timeout="20">
+        DELETE FROM sys_role WHERE id=#{id}
+    </delete>	
+       
+    <delete id="batchDelete" flushCache="true" statementType="PREPARED" timeout="20">
+     	DELETE FROM sys_role WHERE  id IN
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">   
+	        #{item}   
+	    </foreach> 
+    </delete>     
+</mapper>

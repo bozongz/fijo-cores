@@ -1,0 +1,82 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN'
+  'http://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+  
+<mapper namespace='com.fijo.cores.app.mapper.ProcessAuditMapper'>
+	<!-- 定义缓存 -->
+	<cache eviction="LRU" flushInterval="60000" size="512" readOnly="true"/>
+     
+  	<resultMap id="processAuditResult" type="ProcessAudit">
+        <id column="auditId" property="auditId" />
+        <result column="submitUserId" property="submitUserId" />
+        <result column="submitOrgId" property="submitOrgId" />
+        <result column="subjectType" property="subjectType" />        
+    	<result column="subjects" property="subjects" />
+    	<result column="aversion" property="aversion" />
+    	<association property="processStep" javaType="ProcessStep">
+			<id property="stepId" column="stepId"/>
+			<result property="stepCode" column="stepCode"/>
+		</association>           	
+    </resultMap>
+
+	<select id='getById' parameterType='Integer' resultMap="processAuditResult">
+		SELECT a.*,s.stepId,s.stepCode FROM app_process_audit a,app_process_step s WHERE a.processStepId=s.stepId AND a.auditId = #{auditId} 
+	</select>
+	    
+    <select id="getAll" resultMap="processAuditResult">
+        SELECT a.*,s.stepId,s.stepCode FROM app_process_audit a,app_process_step s,app_process_header h WHERE a.processStepId=s.stepId AND s.headerId=h.headerId AND a.aversion=h.hversion 
+        <if test="submitUserId != null and submitUserId!=''">
+            AND a.submitUserId = #{submitUserId}
+        </if>
+        <if test="submitOrgId != null and submitOrgId!=''">
+            AND a.submitOrgId = #{submitOrgId}
+        </if>
+        <if test="subjectType != null and subjectType!=''">
+            AND a.subjectType = #{subjectType}
+        </if>
+        <if test="subjects != null and subjects!=''">
+            AND a.subjects = #{subjects}
+        </if>
+        <if test="processStep != null">
+            AND a.processStepId = #{processStep.stepId}
+        </if>  
+       ORDER BY h.headerId,s.stepId ASC
+    </select>
+     
+	<select id='getByStep' parameterType='Integer' resultMap="processAuditResult">		 
+		 SELECT a.*,s.stepId,s.stepCode FROM app_process_audit a,app_process_step s,app_process_header h WHERE a.processStepId=s.stepId AND s.headerId=h.headerId AND a.aversion=h.hversion AND a.processStepId = #{processStepId}
+	</select>
+	
+    <insert id="batchCreate" parameterType="java.util.List" flushCache="true" statementType="PREPARED" timeout="20" databaseId="mysql">
+        insert into app_process_audit (submitUserId,submitOrgId,subjectType,subjects,aversion,processStepId)  values 
+        <foreach collection="list" index="index" item="item" separator=",">   
+	        (#{item.submitUserId},#{item.submitOrgId},#{item.subjectType},#{item.subjects},#{item.aversion},#{item.processStep.stepId})    
+	    </foreach> 
+    </insert>
+    <insert id="batchCreate" parameterType="java.util.List" flushCache="true" statementType="PREPARED" timeout="20" databaseId="oracle">
+        insert into app_process_audit (auditId,submitUserId,submitOrgId,subjectType,subjects,aversion,processStepId)  values
+        <foreach collection="list" index="index" item="item" separator=",">
+            (app_process_audit_seq.nextval,#{item.submitUserId},#{item.submitOrgId},#{item.subjectType},#{item.subjects},#{item.aversion},#{item.processStep.stepId})
+        </foreach>
+    </insert>
+
+    <insert id="create" parameterType="ProcessAudit" useGeneratedKeys="true" keyProperty="auditId" databaseId="mysql">
+    	insert into app_process_audit(submitUserId,submitOrgId,subjectType,subjects,aversion,processStepId) values 
+    	(#{submitUserId},#{submitOrgId},#{subjectType},#{subjects},#{aversion},#{processStep.stepId})
+	</insert>
+    <insert id="create" parameterType="ProcessAudit" useGeneratedKeys="false" keyProperty="auditId" databaseId="oracle">
+        <selectKey resultType="Integer" keyProperty="auditId" order="BEFORE">
+            select app_process_audit_seq.nextval as auditId from dual
+        </selectKey>
+        insert into app_process_audit(auditId,submitUserId,submitOrgId,subjectType,subjects,aversion,processStepId) values
+        (#{auditId},#{submitUserId},#{submitOrgId},#{subjectType},#{subjects},#{aversion},#{processStep.stepId})
+    </insert>
+
+	<update id="update" parameterType="ProcessAudit" flushCache="true" statementType="PREPARED" timeout="20">
+        update app_process_audit set submitUserId=#{submitUserId},submitOrgId=#{submitOrgId},subjectType=#{subjectType},subjects=#{subjects},aversion=#{aversion},processStepId=#{processStep.stepId} where auditId=#{auditId}
+    </update>
+    
+	<delete id="delete" parameterType="ProcessAudit" flushCache="true" statementType="PREPARED" timeout="20">
+     	DELETE FROM app_process_audit WHERE auditId=#{auditId}
+    </delete>
+</mapper>

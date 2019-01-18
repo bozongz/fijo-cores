@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN'
+  'http://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+  
+<mapper namespace='com.fijo.cores.app.mapper.ProcessHeaderMapper'>
+	<!-- 定义缓存 -->
+	<cache eviction="LRU" flushInterval="60000" size="512" readOnly="true"/>
+     
+  	<resultMap id="processHeaderResult" type="ProcessHeader">
+        <id column="headerId" property="headerId" />        
+        <result column="headerCode" property="headerCode" />
+        <result column="headerDesc" property="headerDesc" />  
+        <result column="typeId" property="typeId" />       
+        <result column="enabled" property="enabled" />  
+        <result column="hversion" property="hversion" />  	 
+        <!-- 为了保证Kyro 序列化/反序列化后集合数据不丢失，延迟加载属性调整为eager  -->
+ 		<collection property="steps" javaType="ArrayList" fetchType="eager" column="headerId" ofType="ProcessStep" select="com.fijo.cores.app.mapper.ProcessStepMapper.getByHeader"/>
+    </resultMap>
+
+	<select id='getById' parameterType='Integer' resultMap="processHeaderResult">
+     	SELECT * FROM app_process_header WHERE headerId = #{headerId}
+	</select> 
+	
+	<select id='getByUnique' resultMap="processHeaderResult">
+     	SELECT * FROM app_process_header WHERE headerCode = #{headerCode}
+	</select> 
+
+	<select id="getAll" resultMap="processHeaderResult">
+    	SELECT h.*,t.*,s.* FROM app_process_header h, app_process_type t,app_process_step s WHERE h.typeId=t.typeId AND s.headerId=h.headerId
+        <if test="enabled != null">
+            and h.enabled = #{enabled}
+        </if>  
+        ORDER BY h.headerId ASC
+    </select>
+    
+    <update id="update" parameterType="java.util.Map" flushCache="true" statementType="PREPARED" timeout="20">
+     	UPDATE app_process_header SET headerDesc=#{headerDesc},enabled=#{enabled},hversion=#{hversion} WHERE headerId=#{headerId}     	
+    </update>
+</mapper>

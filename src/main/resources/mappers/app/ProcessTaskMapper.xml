@@ -1,0 +1,109 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN'
+  'http://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+  
+<mapper namespace='com.fijo.cores.app.mapper.ProcessTaskMapper'>
+	<!-- 定义缓存 -->
+	<cache eviction="LRU" flushInterval="60000" size="512" readOnly="true"/>
+     
+  	<resultMap id="processTaskResult" type="ProcessTask">
+        <id column="id" property="id" />
+      	<result column="typeId" property="typeId" />
+    	<result column="headerId" property="headerId" />
+        <result column="receiptId" property="receiptId" />        
+ 		<result column="stepId" property="stepId" /> 
+ 		<result column="stepCode" property="stepCode" />
+ 		<result column="title" property="title" />	
+ 		<result column="currentOrgId" property="currentOrgId" />
+ 		<result column="currentOrgName" property="currentOrgName" />
+ 		<result column="currentUserId" property="currentUserId" />   		  		    	
+ 		<result column="currentUserCode" property="currentUserCode" />  		
+ 		<result column="currentUserName" property="currentUserName" /> 
+ 		<result column="createOrgId" property="createOrgId" />
+ 		<result column="createOrgName" property="createOrgName" />		
+ 		<result column="createUserId" property="createUserId" />
+      	<result column="createUserCode" property="createUserCode" />
+      	<result column="createUserName" property="createUserName" />
+ 		<result column="createDate" property="createDate" /> 
+ 		<result column="previousOrgId" property="previousOrgId" />
+ 		<result column="previousOrgName" property="previousOrgName" />
+ 		<result column="previousUserId" property="previousUserId" />
+      	<result column="previousUserCode" property="previousUserCode" />
+      	<result column="previousUserName" property="previousUserName" />
+ 		<result column="previousDate" property="previousDate" />
+ 		<result column="generateDate" property="generateDate" />        	
+    </resultMap>
+    
+    <select id="getAll" resultMap="processTaskResult">
+        SELECT k.*,t.typeDesc,h.headerDesc,s.stepDesc FROM app_process_task k,app_process_type t,app_process_header h,app_process_step s WHERE k.typeId=t.typeId AND k.headerId=h.headerId AND k.stepId=s.stepId
+			<if test="receiptId != null">
+	            AND k.receiptId = #{receiptId}
+	        </if> 
+			<if test="typeId != null">
+	            AND k.typeId = #{typeId}
+	        </if>   
+	        <if test="headerId != null">
+	            AND k.headerId = #{headerId}
+	        </if>    
+	        <if test="stepId != null">
+	            AND k.stepId = #{stepId}
+	        </if>
+	        <if test="stepCode != null">
+	            AND k.stepCode = #{stepCode}
+	        </if>
+	        <if test="createUserId != null">
+	            AND k.createUserId = #{createUserId}
+	        </if>
+	        <if test="currentUserId != null">
+	            AND k.currentUserId = #{currentUserId}
+	        </if>
+	        <if test="currentOrgId != null">
+	            AND k.currentOrgId = #{currentOrgId}
+	        </if> 
+	        <if test="previousUserId != null">
+	            AND k.previousUserId = #{previousUserId}
+	        </if>
+	        <if test="previousOrgId != null">
+	            AND k.previousOrgId = #{previousOrgId}
+	        </if> 
+          ORDER By k.generateDate DESC,k.createDate DESC
+    </select>
+
+    <select id='getById' parameterType='Long' resultMap="processTaskResult">
+        SELECT k.*,t.typeDesc,h.headerDesc,s.stepDesc FROM app_process_task k,app_process_type t,app_process_header h,app_process_step s WHERE k.typeId=t.typeId AND k.headerId=h.headerId AND k.stepId=s.stepId AND k.id = #{id}
+    </select>
+
+    <select id='getCurrentUserTask' resultMap="processTaskResult">
+	     SELECT * FROM app_process_task k WHERE k.typeId = #{typeId} AND k.headerId = #{headerId} AND k.receiptId = #{receiptId} AND k.currentUserId = #{currentUserId}
+    </select>	
+    
+	<select id="getCount" resultType="Integer">
+        SELECT count(*) FROM app_process_task k WHERE k.currentUserId = #{currentUserId}
+    </select>    
+     
+    <insert id="create" parameterType="ProcessTask" useGeneratedKeys="true" keyProperty="id" databaseId="mysql">
+        INSERT INTO app_process_task (typeId,headerId,receiptId,stepId,stepCode,title,previousOrgId,previousOrgName,createOrgId,createOrgName,currentOrgId,currentOrgName,currentUserId,currentUserCode,currentUserName,createUserId,createUserCode,createUserName,createDate,previousUserId,previousUserCode,previousUserName,previousDate,generateDate ) 
+        VALUES (#{typeId},#{headerId},#{receiptId},#{stepId},#{stepCode},#{title},#{previousOrgId},#{previousOrgName},#{createOrgId},#{createOrgName},#{currentOrgId},#{currentOrgName},#{currentUserId},#{currentUserCode},#{currentUserName},#{createUserId},#{createUserCode},#{createUserName},#{createDate},#{previousUserId},#{previousUserCode},#{previousUserName},#{previousDate},#{generateDate} )
+    </insert>
+    <insert id="create" parameterType="ProcessTask" useGeneratedKeys="false" keyProperty="id" databaseId="oracle">
+        <selectKey resultType="Long" keyProperty="id" order="BEFORE">
+            select app_process_task_seq.nextval as id from dual
+        </selectKey>
+        INSERT INTO app_process_task (id,typeId,headerId,receiptId,stepId,stepCode,title,previousOrgId,previousOrgName,createOrgId,createOrgName,currentOrgId,currentOrgName,currentUserId,currentUserCode,currentUserName,createUserId,createUserCode,createUserName,createDate,previousUserId,previousUserCode,previousUserName,previousDate,generateDate )
+        VALUES (#{id},#{typeId},#{headerId},#{receiptId},#{stepId},#{stepCode},#{title},#{previousOrgId},#{previousOrgName},#{createOrgId},#{createOrgName},#{currentOrgId},#{currentOrgName},#{currentUserId},#{currentUserCode},#{currentUserName},#{createUserId},#{createUserCode},#{createUserName},#{createDate},#{previousUserId},#{previousUserCode},#{previousUserName},#{previousDate},#{generateDate} )
+    </insert>
+
+    <delete id="delete" parameterType="ProcessTask" flushCache="true" statementType="PREPARED" timeout="20">
+     	DELETE FROM app_process_task WHERE typeId = #{typeId} AND headerId=#{headerId} AND receiptId=#{receiptId} 
+     	<if test="stepId != null">
+            AND stepId=#{stepId}
+        </if>
+        <if test="currentUserId != null">
+            AND currentUserId=#{currentUserId}
+        </if>
+    </delete>
+
+    <delete id="deleteById" parameterType="Long" flushCache="true" statementType="PREPARED" timeout="20">
+        DELETE FROM app_process_task WHERE id = #{id}
+    </delete>
+</mapper>

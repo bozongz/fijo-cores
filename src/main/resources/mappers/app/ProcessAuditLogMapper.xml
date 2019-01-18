@@ -1,0 +1,88 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE mapper PUBLIC '-//mybatis.org//DTD Mapper 3.0//EN'
+  'http://mybatis.org/dtd/mybatis-3-mapper.dtd'>
+  
+<mapper namespace='com.fijo.cores.app.mapper.ProcessAuditLogMapper'>
+	<!-- 定义缓存 -->
+	<cache eviction="LRU" flushInterval="60000" size="512" readOnly="true"/>
+     
+  	<resultMap id="processAuditLogResult" type="ProcessAuditLog">
+        <id column="id" property="id" />
+        <result column="orgId" property="orgId" />
+        <result column="orgName" property="orgName" /> 
+        <result column="receiptId" property="receiptId" />        
+    	<result column="typeId" property="typeId" />
+    	<result column="headerId" property="headerId" />    	
+ 		<result column="previousStepId" property="previousStepId" />
+ 		<result column="stepId" property="stepId" />
+ 		<result column="result" property="result" />  
+ 		<result column="resultDesc" property="resultDesc" /> 
+ 		<result column="opinion" property="opinion" />
+ 		<result column="createUserId" property="createUserId" />
+      	<result column="createUserCode" property="createUserCode" />
+      	<result column="createUserName" property="createUserName" />
+ 		<result column="createDate" property="createDate" />   
+ 		<result column="typeDesc" property="typeDesc" /> 
+ 		<result column="headerDesc" property="headerDesc" /> 
+ 		<result column="previousStepDesc" property="previousStepDesc" /> 
+ 		<result column="stepDesc" property="stepDesc" />     	
+    </resultMap>
+    
+    <select id="getAll" resultMap="processAuditLogResult">
+    	SELECT l.* FROM app_process_audit_log l
+     	<where>        
+	        <if test="receiptId != null">
+	            and l.receiptId = #{receiptId}
+	        </if>
+			<if test="typeId != null">
+	            and l.typeId = #{typeId}
+	        </if>   
+	        <if test="headerId != null">
+	            and l.headerId = #{headerId}
+	        </if>  
+	        <!-- ZJS会在URL中传递参数,因此不能加这些参数。。。
+	        <if test="previousStepId != null">
+	            and l.previousStepId = #{previousStepId}
+	        </if>    
+	        <if test="stepId != null">
+	            and l.stepId = #{stepId}
+	        </if>  -->
+	    	<if test="createUserId != null">
+	        	and l.createUserId = #{createUserId}
+	        </if>   
+	        <if test="createDate != null">
+	            and l.createDate = #{createDate}
+	        </if> 
+        </where> 
+         ORDER BY l.createDate DESC
+    </select>
+     
+    <insert id="create" parameterType="ProcessAuditLog" useGeneratedKeys="true" keyProperty="id" databaseId="mysql">
+        insert into app_process_audit_log (orgId,orgName,receiptId,typeId,headerId,previousStepId,stepId,result,resultDesc,opinion,createUserId,createUserCode,createUserName,createDate,typeDesc,headerDesc,previousStepDesc,stepDesc) 
+        values (#{orgId},#{orgName},#{receiptId},#{typeId},#{headerId},#{previousStepId},#{stepId},#{result},#{resultDesc},#{opinion},#{createUserId},#{createUserCode},#{createUserName},#{createDate},#{typeDesc},#{headerDesc},#{previousStepDesc},#{stepDesc})
+    </insert>
+    <insert id="create" parameterType="ProcessAuditLog" useGeneratedKeys="false" keyProperty="id" databaseId="oracle">
+        <selectKey resultType="Long" keyProperty="id" order="BEFORE">
+            select app_process_audit_log_seq.nextval as id from dual
+        </selectKey>
+        insert into app_process_audit_log (id,orgId,orgName,receiptId,typeId,headerId,previousStepId,stepId,result,resultDesc,opinion,createUserId,createUserCode,createUserName,createDate,typeDesc,headerDesc,previousStepDesc,stepDesc)
+        values (#{id},#{orgId},#{orgName},#{receiptId},#{typeId},#{headerId},#{previousStepId},#{stepId},#{result},#{resultDesc},#{opinion},#{createUserId},#{createUserCode},#{createUserName},#{createDate},#{typeDesc},#{headerDesc},#{previousStepDesc},#{stepDesc})
+    </insert>
+
+    <delete id="delete" parameterType="ProcessAuditLog" flushCache="true" statementType="PREPARED" timeout="20">
+     	DELETE FROM app_process_audit_log WHERE typeId = #{typeId} AND headerId=#{headerId} AND receiptId=#{receiptId}
+    </delete>
+    
+    <!-- ProcessUpdateListener 执行赋值参数 -->
+    <update id="update" parameterType="java.util.Map" flushCache="true" statementType="PREPARED" timeout="20">
+     	UPDATE app_process_audit_log SET receiptId=#{previousReceiptId} WHERE typeId = #{processTypeId} AND headerId=#{processHeaderId} AND receiptId=#{currentReceiptId}
+    </update>
+
+    <!-- 流程完结归档后执行的变更操作-->
+    <delete id="deleteCreationLog" parameterType="ProcessAuditLog" flushCache="true" statementType="PREPARED" timeout="20">
+        DELETE FROM app_process_audit_log WHERE id=#{id}
+    </delete>
+    <update id="updateLogOpnion" parameterType="java.util.Map" flushCache="true" statementType="PREPARED" timeout="20">
+        UPDATE app_process_audit_log SET result=#{result},resultDesc=#{resultDesc},opinion=#{opinion} WHERE id=#{id}
+    </update>
+</mapper>

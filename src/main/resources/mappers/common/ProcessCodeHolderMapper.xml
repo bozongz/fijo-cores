@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace='com.fijo.cores.common.mapper.ProcessCodeHolderMapper'>
+	<!-- 定义缓存 -->
+	<cache eviction="LRU" flushInterval="60000" size="512" readOnly="true"/>
+     
+  	<resultMap id="ProcessCodeHolderResult" type="ProcessCodeHolder">
+        <id column="id" property="id" />  
+        <result column="prefix" property="prefix" />      
+        <result column="processDate" property="processDate" />
+        <result column="countCode" property="countCode" />
+        <result column="countLength" property="countLength" />
+    </resultMap>
+	
+	<select id="getAll" resultMap="ProcessCodeHolderResult">
+         SELECT * FROM sys_process_code_holder
+        <where>
+            <if test="prefix != null and prefix !=''">
+                AND prefix = #{prefix}
+            </if>
+            <if test="processDate != null and processDate !=''">
+                AND processDate = #{processDate}
+            </if>
+            <if test="countCode != null and countCode !=''">
+                AND countCode = #{countCode}
+            </if>
+            <if test="countLength != null and countLength !=''">
+                AND countLength = #{countLength}
+            </if>
+        </where>
+        ORDER BY id DESC
+    </select>
+
+	<insert id="create" parameterType="ProcessCodeHolder" useGeneratedKeys="true" keyProperty="id" databaseId="mysql">
+        insert into sys_process_code_holder (prefix,processDate,countCode,countLength)
+        values (#{prefix},#{processDate},#{countCode},#{countLength})
+    </insert>
+    <insert id="create" parameterType="ProcessCodeHolder" useGeneratedKeys="false" keyProperty="id" databaseId="oracle">
+        <selectKey resultType="Long" keyProperty="id" order="BEFORE">
+            select sys_process_code_holder_seq.nextval as id from dual
+        </selectKey>
+        insert into sys_process_code_holder (id,prefix,processDate,countCode,countLength)
+        values (#{id},#{prefix},#{processDate},#{countCode},#{countLength})
+    </insert>
+
+    <update id="update" parameterType="ProcessCodeHolder" flushCache="true" statementType="PREPARED" timeout="20" >
+        UPDATE sys_process_code_holder SET prefix=#{prefix},processDate=#{processDate},countCode=#{countCode},countLength=#{countLength}
+        WHERE id=#{id}
+    </update>
+    
+</mapper>
