@@ -3,16 +3,16 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.simbest</groupId>
-	<artifactId>simbest-parent</artifactId>
-	<version>0.6</version>
+	<groupId>com.fijo</groupId>
+	<artifactId>fijo-pom</artifactId>
+	<version>1.0</version>
 	<packaging>pom</packaging>
-	<name>simbest-parent</name>
+	<name>fijo-pom</name>
 	<url>http://maven.apache.org</url>
 
-	<scm>
-		<url>https://github.com/simbest/simbest-parent.git</url>
-	</scm>
+	<!--<scm>-->
+		<!--<url>https://github.com/simbest/simbest-parent.git</url>-->
+	<!--</scm>-->
 
     <licenses>
         <license>
