@@ -1305,18 +1305,22 @@
             <url>http://maven.oschina.net/content/repositories/thirdparty/</url>
         </repository>-->
 		<repository>
-			<id>Common Release</id>
+			<!--<id>Common Release</id>
 			<name>Central repository</name>
 			<url>http://repo1.maven.org/maven2</url>
 			<snapshots>
 				<enabled>false</enabled>
-			</snapshots>
+			</snapshots>-->
+			<id>alimaven</id>
+            <mirrorOf>central</mirrorOf>
+            <name>aliyun maven</name>
+            <url>http://maven.aliyun.com/nexus/content/repositories/central/</url>
 		</repository>
 		<!-- <repository>
 			<id>cloudera</id>
 			<url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
 		</repository>-->
-		<repository>
+		<!--<repository>
             <id>simbest-maven-repo1</id>
             <url>https://raw.github.com/simbest/simbest-maven-repo/master/repository/</url>
             <snapshots>
@@ -1331,7 +1335,7 @@
 				<enabled>true</enabled>
 				<updatePolicy>always</updatePolicy>
 			</snapshots>
-		</repository>
+		</repository>-->
 		<!--
 		<repository>
 			<id>Apache Release</id>
