@@ -41,19 +41,28 @@
 ```
 <dependency>
 	<groupId>com.fijo</groupId>
-	<artifactId>simbest-cores</artifactId>
-	<version>0.5</version>
+	<artifactId>simbest-fijo</artifactId>
+	<version>1.0</version>
 </dependency>
 		
 		
-<repositories>
-	<repository>
-		<id>simbest-cores-mvn-repo</id>
-		<url>https://raw.github.com/simbest/simbest-cores/mvn-repo/</url>
-		<snapshots>
-			<enabled>true</enabled>
-			<updatePolicy>always</updatePolicy>
-		</snapshots>
-	</repository>
-</repositories>	
+ <repositories>
+    <repository>
+      <id>fijo-pom-mvn-repo</id>
+      <url>https://raw.github.com/bozongz/fijo-cores/pom-mvn/</url>
+      <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>fijo-cores</id>
+      <name>fijo-core</name>
+      <url>https://raw.github.com/bozongz/fijo-cores/mvn/</url>
+      <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>always</updatePolicy>
+      </snapshots>
+    </repository>
+  </repositories>
 ```
